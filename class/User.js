@@ -1,6 +1,7 @@
 import { Lock } from './Lock';
 
 var crypto = require('crypto');
+var bcrypt = require('bcrypt');
 var lightningPayReq = require('bolt11');
 import { BigNumber } from 'bignumber.js';
 import { decodeRawHex } from '../btc-decoder';
@@ -499,7 +500,8 @@ export class User {
 
   async _saveUserToDatabase() {
     let key;
-    await this._redis.set((key = 'user_' + this._login + '_' + this._hash(this._password)), this._userid);
+    const salt = bcrypt.genSaltSync(10);
+    await this._redis.set((key = 'user_' + this._login + '_' + this._hash(this._password, salt)), this._userid);
   }
 
   /**
@@ -601,8 +603,8 @@ export class User {
     return addr;
   }
 
-  _hash(string) {
-    return crypto.createHash('sha256').update(string).digest().toString('hex');
+  _hash(string, salt) {
+    return bcrypt.hashSync(string, salt);
   }
 
   /**
